@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Visualizador de Música</title>
+  <style>
+    canvas {
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="visualizerCanvas" width="800" height="400"></canvas>
+
+  <script>
+    // Obtener el canvas y el contexto de dibujo
+    const canvas = document.getElementById('visualizerCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configurar el tamaño de la forma de onda
+    const waveformWidth = canvas.width;
+    const waveformHeight = canvas.height;
+
+    // Crear un nuevo AudioContext
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Obtener la fuente de audio del sistema
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        // Crear un nodo fuente de audio desde el stream
+        const sourceNode = audioContext.createMediaStreamSource(stream);
+
+        // Crear un nodo analizador de audio
+        const analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 2048; // Tamaño de la transformada de Fourier
+
+        // Conectar el nodo fuente de audio al analizador
+        sourceNode.connect(analyserNode);
+
+        // Crear un búfer para los datos de la forma de onda
+        const waveformBufferLength = analyserNode.fftSize;
+        const waveformBuffer = new Uint8Array(waveformBufferLength);
+
+        // Función para dibujar la forma de onda
+        function drawWaveform() {
+          // Limpiar el canvas
+          ctx.clearRect(0, 0, waveformWidth, waveformHeight);
+
+          // Obtener los datos de la forma de onda del analizador
+          analyserNode.getByteTimeDomainData(waveformBuffer);
+
+          // Dibujar la forma de onda
+          ctx.beginPath();
+          ctx.moveTo(0, waveformHeight / 2);
+
+          const sliceWidth = waveformWidth * 1.0 / waveformBufferLength;
+          let x = 0;
+          for (let i = 0; i < waveformBufferLength; i++) {
+            const y = (waveformBuffer[i] / 128.0) * (waveformHeight / 2);
+            ctx.lineTo(x, y);
+            x += sliceWidth;
+          }
+
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'white';
+          ctx.stroke();
+
+          // Solicitar el próximo cuadro de animación
+          requestAnimationFrame(drawWaveform);
+        }
+
+        // Iniciar la animación del visualizador
+        drawWaveform();
+      })
+      .catch(function(error) {
+        console.error('Error al acceder al audio: ', error);
+      });
+  </script>
+</body>
+</html>
