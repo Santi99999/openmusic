@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Visualizador de Música</title>
+  <title>openmusic</title>
   <style>
     canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    #background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background-color: black;
+      opacity: 0.9;
+      z-index: 0;
     }
   </style>
 </head>
 <body>
+  <div id="background"></div>
   <canvas id="visualizerCanvas" width="800" height="400"></canvas>
 
   <script>
@@ -50,13 +65,18 @@
 
           // Dibujar la forma de onda
           ctx.beginPath();
-          ctx.moveTo(0, waveformHeight / 2);
-
           const sliceWidth = waveformWidth * 1.0 / waveformBufferLength;
           let x = 0;
           for (let i = 0; i < waveformBufferLength; i++) {
-            const y = (waveformBuffer[i] / 128.0) * (waveformHeight / 2);
-            ctx.lineTo(x, y);
+            const v = waveformBuffer[i] / 128.0;
+            const y = v * waveformHeight / 2;
+
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+
             x += sliceWidth;
           }
 
@@ -74,6 +94,30 @@
       .catch(function(error) {
         console.error('Error al acceder al audio: ', error);
       });
+
+    // Cambiar el color del visualizador y el fondo en función de las frecuencias del audio
+    function changeColors() {
+      // Obtener los datos de frecuencia del analizador
+      const frequencyData = new Uint8Array(analyserNode.frequencyBinCount);
+      analyserNode.getByteFrequencyData(frequencyData);
+
+      // Calcular el valor promedio de frecuencia
+      const averageFrequency = Array.from(frequencyData).reduce((acc, val) => acc + val, 0) / frequencyData.length;
+
+      // Establecer el color del visualizador en función de la frecuencia promedio
+      const visualizerColor = `rgb(${averageFrequency}, ${255 - averageFrequency}, ${averageFrequency})`;
+      canvas.style.borderColor = visualizerColor;
+
+      // Establecer el color de fondo en función de la frecuencia promedio
+      const backgroundColor = `rgb(${255 - averageFrequency}, ${averageFrequency}, ${255 - averageFrequency})`;
+      document.getElementById('background').style.backgroundColor = backgroundColor;
+
+      // Solicitar el próximo cambio de color
+      requestAnimationFrame(changeColors);
+    }
+
+    // Iniciar el cambio de colores
+    changeColors();
   </script>
 </body>
 </html>
