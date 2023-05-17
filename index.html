@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>openmusic</title>
+  <title>Visualizador de Música</title>
   <style>
     canvas {
       position: absolute;
@@ -116,8 +116,14 @@
       requestAnimationFrame(changeColors);
     }
 
-    // Iniciar el cambio de colores
-    changeColors();
+    // Verificar si el navegador es compatible con la Web Audio API
+    const isWebAudioSupported = (window.AudioContext || window.webkitAudioContext);
+    if (!isWebAudioSupported) {
+      console.error('El navegador no es compatible con la Web Audio API');
+    } else {
+      // Iniciar el cambio de colores
+      changeColors();
+    }
   </script>
 </body>
 </html>
