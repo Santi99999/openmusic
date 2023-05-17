@@ -26,6 +26,7 @@
   <div id="background"></div>
   <canvas id="visualizerCanvas" width="800" height="400"></canvas>
 
+  <script src="https://cdn.jsdelivr.net/npm/recorder-js"></script>
   <script>
     // Obtener el canvas y el contexto de dibujo
     const canvas = document.getElementById('visualizerCanvas');
@@ -38,18 +39,21 @@
     // Crear un nuevo AudioContext
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Obtener la fuente de audio del sistema
+    // Crear un nuevo Recorder
+    const recorder = new Recorder(audioContext);
+
+    // Solicitar el acceso al audio del sistema
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(function(stream) {
-        // Crear un nodo fuente de audio desde el stream
-        const sourceNode = audioContext.createMediaStreamSource(stream);
+        // Conectar el stream de audio al Recorder
+        recorder.init(stream);
 
         // Crear un nodo analizador de audio
         const analyserNode = audioContext.createAnalyser();
         analyserNode.fftSize = 2048; // Tamaño de la transformada de Fourier
 
-        // Conectar el nodo fuente de audio al analizador
-        sourceNode.connect(analyserNode);
+        // Conectar el nodo analizador al Recorder
+        recorder.connect(analyserNode);
 
         // Crear un búfer para los datos de la forma de onda
         const waveformBufferLength = analyserNode.fftSize;
@@ -108,6 +112,9 @@
           drawWaveform();
           changeColors();
         }, 5);
+
+        // Comenzar la grabación
+        recorder.start();
       })
       .catch(function(error) {
         console.error('Error al acceder al audio: ', error);
