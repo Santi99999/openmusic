@@ -83,47 +83,35 @@
           ctx.lineWidth = 2;
           ctx.strokeStyle = 'white';
           ctx.stroke();
-
-          // Solicitar el próximo cuadro de animación
-          requestAnimationFrame(drawWaveform);
         }
 
-        // Iniciar la animación del visualizador
-        drawWaveform();
+        // Cambiar el color del visualizador y el fondo en función de las frecuencias del audio
+        function changeColors() {
+          // Obtener los datos de frecuencia del analizador
+          const frequencyData = new Uint8Array(analyserNode.frequencyBinCount);
+          analyserNode.getByteFrequencyData(frequencyData);
+
+          // Calcular el valor promedio de frecuencia
+          const averageFrequency = Array.from(frequencyData).reduce((acc, val) => acc + val, 0) / frequencyData.length;
+
+          // Establecer el color del visualizador en función de la frecuencia promedio
+          const visualizerColor = `rgb(${averageFrequency}, ${255 - averageFrequency}, ${averageFrequency})`;
+          canvas.style.borderColor = visualizerColor;
+
+          // Establecer el color de fondo en función de la frecuencia promedio
+          const backgroundColor = `rgb(${255 - averageFrequency}, ${averageFrequency}, ${255 - averageFrequency})`;
+          document.getElementById('background').style.backgroundColor = backgroundColor;
+        }
+
+        // Ejecutar las funciones cada 5 milisegundos
+        setInterval(function() {
+          drawWaveform();
+          changeColors();
+        }, 5);
       })
       .catch(function(error) {
         console.error('Error al acceder al audio: ', error);
       });
-
-    // Cambiar el color del visualizador y el fondo en función de las frecuencias del audio
-    function changeColors() {
-      // Obtener los datos de frecuencia del analizador
-      const frequencyData = new Uint8Array(analyserNode.frequencyBinCount);
-      analyserNode.getByteFrequencyData(frequencyData);
-
-      // Calcular el valor promedio de frecuencia
-      const averageFrequency = Array.from(frequencyData).reduce((acc, val) => acc + val, 0) / frequencyData.length;
-
-      // Establecer el color del visualizador en función de la frecuencia promedio
-      const visualizerColor = `rgb(${averageFrequency}, ${255 - averageFrequency}, ${averageFrequency})`;
-      canvas.style.borderColor = visualizerColor;
-
-      // Establecer el color de fondo en función de la frecuencia promedio
-      const backgroundColor = `rgb(${255 - averageFrequency}, ${averageFrequency}, ${255 - averageFrequency})`;
-      document.getElementById('background').style.backgroundColor = backgroundColor;
-
-      // Solicitar el próximo cambio de color
-      requestAnimationFrame(changeColors);
-    }
-
-    // Verificar si el navegador es compatible con la Web Audio API
-    const isWebAudioSupported = (window.AudioContext || window.webkitAudioContext);
-    if (!isWebAudioSupported) {
-      console.error('El navegador no es compatible con la Web Audio API');
-    } else {
-      // Iniciar el cambio de colores
-      changeColors();
-    }
   </script>
 </body>
 </html>
